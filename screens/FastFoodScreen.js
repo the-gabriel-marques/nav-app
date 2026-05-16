@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView, Alert, Platform } from 'react-native';
 
 const comidas = [
-  { id: 'hamburguer', nome: 'Hambúrguer', preco: 35, imagem: require('./assets/hamburguer.jpeg') },
-  { id: 'pizza', nome: 'Pizza', preco: 50, imagem: require('./assets/pizza.jpg') },
-  { id: 'hotDog', nome: 'Hot Dog', preco: 15, imagem: require('./assets/hotDog.jpg') },
+  { id: 'hamburguer', nome: 'Hambúrguer', preco: 35, imagem: require('../assets/hamburguer.jpeg') },
+  { id: 'pizza', nome: 'Pizza', preco: 50, imagem: require('../assets/pizza.jpg') },
+  { id: 'hotDog', nome: 'Hot Dog', preco: 15, imagem: require('../assets/hotDog.jpg') },
 ];
 
 const bebidas = [
-  { id: 'refrigerante', nome: 'Refrigerante', preco: 10, imagem: require('./assets/refrigerante.jpg') },
-  { id: 'suco', nome: 'Suco', preco: 8, imagem: require('./assets/suco.jpg') },
-  { id: 'agua', nome: 'Água', preco: 6, imagem: require('./assets/agua.jpg') },
+  { id: 'refrigerante', nome: 'Refrigerante', preco: 10, imagem: require('../assets/refrigerante.jpg') },
+  { id: 'suco', nome: 'Suco', preco: 8, imagem: require('../assets/suco.jpg') },
+  { id: 'agua', nome: 'Água', preco: 6, imagem: require('../assets/agua.jpg') },
 ];
 
 export default function App() {
