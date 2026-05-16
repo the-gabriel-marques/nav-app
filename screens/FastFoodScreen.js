@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView, Alert, Platform } from 'react-native';
+import { salvarPedido, obterHistoricoPedidos } from '../database';
 
 const comidas = [
   { id: 'hamburguer', nome: 'Hambúrguer', preco: 35, imagem: require('../assets/hamburguer.jpeg') },
@@ -13,13 +14,21 @@ const bebidas = [
   { id: 'agua', nome: 'Água', preco: 6, imagem: require('../assets/agua.jpg') },
 ];
 
-export default function App() {
+export default function FastFoodScreen({ route }) {
+  const userId = route.params?.user?.id;
   const [comidaSelecionada, setComidaSelecionada] = useState(null);
   const [bebidaSelecionada, setBebidaSelecionada] = useState(null);
+  const [historico, setHistorico] = useState([]);
 
   const total = (comidaSelecionada?.preco || 0) + (bebidaSelecionada?.preco || 0);
 
-  const finalizarPedido = () => {
+  useEffect(() => {
+    if (userId) {
+      obterHistoricoPedidos(userId).then(setHistorico);
+    }
+  }, [userId]);
+
+  const finalizarPedido = async () => {
     if (!comidaSelecionada && !bebidaSelecionada) {
       const mensagemErro = 'Ops! Por favor, selecione pelo menos um item para fazer o pedido. 🍔🥤';
       
@@ -31,23 +40,36 @@ export default function App() {
       return; 
     }
 
+    let itensArray = [];
     let resumo = '';
     
     if (comidaSelecionada) {
       resumo += `🍽️ ${comidaSelecionada.nome}: R$ ${comidaSelecionada.preco.toFixed(2).replace('.', ',')}\n`;
+      itensArray.push(comidaSelecionada.nome);
     }
     
     if (bebidaSelecionada) {
       resumo += `🥤 ${bebidaSelecionada.nome}: R$ ${bebidaSelecionada.preco.toFixed(2).replace('.', ',')}\n`;
+      itensArray.push(bebidaSelecionada.nome);
     }
     
     resumo += `\n💰 Total Pago: R$ ${total.toFixed(2).replace('.', ',')}`;
+
+    if (userId) {
+      const itensStr = itensArray.join(', ');
+      await salvarPedido(userId, itensStr, total);
+      const dadosAtualizados = await obterHistoricoPedidos(userId);
+      setHistorico(dadosAtualizados);
+    }
 
     if (Platform.OS === 'web') {
       window.alert(`Pedido Confirmado! 🎉\n\n${resumo}`);
     } else {
       Alert.alert('Pedido Confirmado! 🎉', resumo);
     }
+
+    setComidaSelecionada(null);
+    setBebidaSelecionada(null);
   };
 
   const renderizarCard = (item, stateSelecionado, setFuncao) => {
@@ -94,6 +116,19 @@ export default function App() {
           </TouchableOpacity>
         </View>
 
+        <View style={styles.historicoContainer}>
+          <Text style={styles.tituloHistorico}>Histórico de Pedidos</Text>
+          {historico.map((item) => (
+            <View key={item.id.toString()} style={styles.cardHistorico}>
+              <View style={styles.infoHistorico}>
+                <Text style={styles.itensHistorico}>{item.itens}</Text>
+                <Text style={styles.dataHistorico}>{item.data}</Text>
+              </View>
+              <Text style={styles.totalHistorico}>R$ {item.total.toFixed(2).replace('.', ',')}</Text>
+            </View>
+          ))}
+        </View>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -102,106 +137,139 @@ export default function App() {
 const styles = StyleSheet.create({
   app: {
     flex: 1,
-    backgroundColor: '#F7F8FA',
-    paddingTop: 40,
+    backgroundColor: '#f0f0f0',
   },
   titulo: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#333',
+    fontSize: 24,
+    fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 20,
+    marginVertical: 20,
+    color: '#333',
   },
   label: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#444',
-    marginLeft: 20,
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 15,
     marginTop: 10,
-    marginBottom: 10,
+    color: '#555',
   },
   listaScroll: {
-    paddingLeft: 20,
-    paddingBottom: 20,
+    paddingLeft: 15,
+    marginVertical: 10,
   },
   card: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#fff',
     borderRadius: 15,
-    padding: 15,
+    padding: 10,
     marginRight: 15,
     alignItems: 'center',
-    width: 140,
+    width: 130,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 4, 
-    borderWidth: 2,
-    borderColor: 'transparent',
+    shadowRadius: 4,
   },
   cardSelecionado: {
-    borderColor: '#FF6B6B',
-    backgroundColor: '#FFF5F5',
+    borderColor: '#007AFF',
+    borderWidth: 2,
+    backgroundColor: '#E6F0FF',
   },
   imagemCard: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 10,
+    width: 90,
+    height: 90,
+    borderRadius: 10,
+    marginBottom: 8,
   },
   nomeCard: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: 'bold',
     color: '#333',
-    textAlign: 'center',
   },
   precoCard: {
-    fontSize: 14,
-    color: '#FF6B6B',
-    fontWeight: 'bold',
-    marginTop: 5,
+    fontSize: 13,
+    color: '#007AFF',
+    fontWeight: '600',
+    marginTop: 4,
   },
   resultadoContainer: {
-    backgroundColor: '#FFF', 
-    margin: 20,
-    padding: 25,
+    backgroundColor: '#fff',
+    margin: 15,
+    padding: 20,
     borderRadius: 20,
     alignItems: 'center',
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowRadius: 4,
   },
   textoTotal: {
-    fontSize: 16,
-    color: '#888',
-    fontWeight: '600',
-    marginBottom: 5,
-    textTransform: 'uppercase',
+    fontSize: 14,
+    color: '#666',
   },
   valorTotal: {
-    fontSize: 36,
+    fontSize: 28,
+    fontWeight: 'bold',
     color: '#333',
-    fontWeight: '900',
-    marginBottom: 20,
+    marginVertical: 5,
   },
   botaoFinalizar: {
-    backgroundColor: '#4ECDC4',
-    width: '100%',
+    backgroundColor: '#007AFF',
     paddingVertical: 15,
+    paddingHorizontal: 40,
     borderRadius: 12,
+    marginTop: 10,
+    width: '100%',
     alignItems: 'center',
-    shadowColor: '#4ECDC4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 5,
   },
   textoBotaoFinalizar: {
-    color: '#FFF',
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  historicoContainer: {
+    paddingHorizontal: 15,
+    marginTop: 10,
+    marginBottom: 30,
+  },
+  tituloHistorico: {
     fontSize: 18,
     fontWeight: 'bold',
-    textTransform: 'uppercase',
-  }
+    color: '#333',
+    marginBottom: 15,
+  },
+  cardHistorico: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  infoHistorico: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  itensHistorico: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+  dataHistorico: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 4,
+  },
+  totalHistorico: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#007AFF',
+  },
 });

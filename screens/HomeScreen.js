@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, route }) {
   
   const AppIcon = ({ title, routeName, icon }) => (
     <TouchableOpacity 
       style={styles.iconContainer} 
-      onPress={() => navigation.navigate(routeName)}
+      onPress={() => navigation.navigate(routeName, { user: route.params?.user })}
     >
       <Text style={styles.emoji}>{icon}</Text>
       <Text style={styles.iconText}>{title}</Text>
